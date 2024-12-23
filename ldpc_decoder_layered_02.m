@@ -1,4 +1,4 @@
-function [y, llr_final, it] = ldpc_decoder_layered_02(llr_data, intera, HBG, H, check_ctrl, Zc)
+function [y, llr_final, it] = ldpc_decoder_layered_02(llr_data, llr_width, intera, HBG, H, check_ctrl, Zc)
     llr_ram = llr_data(:)'; % Init llr_ram
 
 %     HBG=[1 1 1 1 -1 0 1; 0 0 -1 0 0 0 0;2 -1 2 2 2 2 2]; Zc = 3;kb=4;LDPC_K = kb * Zc;LDPC_Q = 3;LDPC_N = Zc * (kb + LDPC_Q);
@@ -29,6 +29,8 @@ function [y, llr_final, it] = ldpc_decoder_layered_02(llr_data, intera, HBG, H, 
     % V2C RAM: Size = max(check_ctrl) * (8+1)bits * Zc_max 
     M_v2c_ram = zeros(max(check_ctrl), Zc);
     M_v2c_vaddr_ram = zeros(max(check_ctrl), Zc);
+
+    maxMagnitude = 2^(llr_width-1);
 
     for it = 1 : intera
 %         it
@@ -69,8 +71,8 @@ function [y, llr_final, it] = ldpc_decoder_layered_02(llr_data, intera, HBG, H, 
                         M_v2c_vaddr_ram(tp, j) = i;
                        
                         abs_val = abs(M_vi_cj);     % 8bit
-                        abs_val = max(min(abs_val, 15), -16); % saturate to 5bit
-                        sign_val = signStrict(M_vi_cj);   % bug here!!!
+                        abs_val = max(min(abs_val, maxMagnitude-1), 0); % saturate
+                        sign_val = signStrict(M_vi_cj);
 
                         % CNU, Update M_c2v
                         if tp == 1

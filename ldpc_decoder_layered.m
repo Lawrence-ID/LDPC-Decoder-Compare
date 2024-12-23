@@ -1,4 +1,4 @@
-function [y, llr_final, it] = ldpc_decoder_layered(llr_data, intera, HBG, H, check_ctrl, Zc)
+function [y, llr_final, it] = ldpc_decoder_layered(llr_data, llr_width, intera, HBG, H, check_ctrl, Zc)
     
     llr_ram = llr_data(:).'; % Init llr_ram, convert to row vector
 
@@ -18,6 +18,8 @@ function [y, llr_final, it] = ldpc_decoder_layered(llr_data, intera, HBG, H, che
     % HBG: R*C, H: M*N = (R*Zc)*(C*Zc)
     [R_HBG, C_HBG] = size(HBG);
     kb = C_HBG - R_HBG;
+
+    maxMagnitude = 2^(llr_width-1);
 
     for it = 1 : intera
         for l = 1 : R_HBG
@@ -40,15 +42,16 @@ function [y, llr_final, it] = ldpc_decoder_layered(llr_data, intera, HBG, H, che
                 end
             end
 
+            % 去零、限幅
             M_v2c_shifted(M_v2c_shifted == 0) = 1;%去零
-            M_v2c_shifted(M_v2c_shifted > 31) = 31;%限幅
-            M_v2c_shifted(M_v2c_shifted < -32) = -32;
+            M_v2c_shifted(M_v2c_shifted > maxMagnitude - 1) = maxMagnitude - 1;%限幅
+            M_v2c_shifted(M_v2c_shifted < -maxMagnitude) = -maxMagnitude;
 
             % CNUs
             sorted_abs_values = sort(abs(M_v2c_shifted));
             min0 = sorted_abs_values(1, :);
             min1 = sorted_abs_values(2, :);
-            sgn = prod(sign(M_v2c_shifted));
+            sgn = prod(signStrict(M_v2c_shifted));
             [~, idx0] = min(abs(M_v2c_shifted)); % used for comparing
 
             M_c2v = zeros(size(M_v2c_shifted, 1), size(M_v2c_shifted, 2));
@@ -57,9 +60,9 @@ function [y, llr_final, it] = ldpc_decoder_layered(llr_data, intera, HBG, H, che
                 for j = 1 : size(M_v2c_shifted, 2)
                     tmp = M_v2c_shifted(i, j);
                     if i ~= idx0(j) % instead of comparing two data
-                        M_c2v(i, j) = min0(j) * sgn(j) * sign(tmp);
+                        M_c2v(i, j) = min0(j) * sgn(j) * signStrict(tmp);
                     else
-                        M_c2v(i, j) = min1(j) * sgn(j) * sign(tmp);
+                        M_c2v(i, j) = min1(j) * sgn(j) * signStrict(tmp);
                     end
                 end
                 M_c2v_shifted(i, :) = circshift(M_c2v(i, :), [0, HBG( l, read_col_idx(i) )]);
@@ -75,7 +78,7 @@ function [y, llr_final, it] = ldpc_decoder_layered(llr_data, intera, HBG, H, che
             end
 
 %             M_c2v_ram
-             llr_ram
+%             llr_ram
 
         end % all layers end
         

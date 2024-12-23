@@ -25,6 +25,7 @@ else
     kb   = 10;
 end
 intera  = 8;               % 迭代次数
+llr_width = 6;             % llr位宽
 % frame_num   = [1e3    1e3       1e3     1e3     1e5];
 % idx           1    2   3   4   5   6  7   8   9   10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  25  26  27
 EbN0        = [0.5 0.6 0.8 0.9 1.0 1.2 1.4 1.5 1.6 1.7 1.8 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0];
@@ -108,10 +109,10 @@ for idx = start_idx : end_idx
             llr_data = floor(rxData*2^4);
 
        %% LDPC全码率并行译码W
-            [dec_data_flooding, llr_flooding] = ldpc_decoder_multrate_serial(llr_data,intera,LDPC_N,LDPC_K, LDPC_P, LDPC_Q,interweave_addr+1,barrel_shifter,variable_ctrl,check_ctrl, Z);
+            [dec_data_flooding, llr_flooding] = ldpc_decoder_multrate_serial(llr_data,llr_width,intera,LDPC_N,LDPC_K, LDPC_P, LDPC_Q,interweave_addr+1,barrel_shifter,variable_ctrl,check_ctrl, Z);
             err_bit_flooding = sum(xor(srcData,dec_data_flooding));%一帧错误bit
        %% LDCP layered decoding
-            [dec_data_layered, llr_layered, it]  = ldpc_decoder_layered_02(llr_data, intera, HBG, HMatrix, check_ctrl, Z);
+            [dec_data_layered, llr_layered, it]  = ldpc_decoder_layered_02(llr_data, llr_width, intera, HBG, HMatrix, check_ctrl, Z);
             err_bit_layered = sum(xor(srcData,dec_data_layered));%一帧错误bit
        %% 错误统计
             errs_flooding(idx) = errs_flooding(idx) + err_bit_flooding;%总错误bit

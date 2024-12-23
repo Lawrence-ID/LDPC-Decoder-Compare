@@ -1,4 +1,4 @@
-function [y, llr_final] = ldpc_decoder_multrate_serial(llr_data,intera,LDPC_N,LDPC_K, LDPC_P, LDPC_Q,inter_wv_addr,shuffer_ctrl,variable_ctrl,check_ctrl,Zc)
+function [y, llr_final] = ldpc_decoder_multrate_serial(llr_data,llr_width,intera,LDPC_N,LDPC_K, LDPC_P, LDPC_Q,inter_wv_addr,shuffer_ctrl,variable_ctrl,check_ctrl,Zc)
 
     % 描述校验矩阵的分割方法，以BG2、Zc=104为例
     % 1. 根据算法特征，将校验矩阵按照行进行分组，每间隔104行，拿出来一行放一组，所以一共可以分成104组，每组共有42行
@@ -42,6 +42,8 @@ function [y, llr_final] = ldpc_decoder_multrate_serial(llr_data,intera,LDPC_N,LD
     %变量节点更新/初始化节点缓存
     
     variable_base = 0;
+
+    maxMagnitude = 2^(llr_width-1);
     
     for llr_num = 1:LDPC_N/Zc
         % 取数求总和
@@ -75,7 +77,6 @@ function [y, llr_final] = ldpc_decoder_multrate_serial(llr_data,intera,LDPC_N,LD
     % node_buf = node_buf.data;
 
     % 去零、限幅
-    maxMagnitude = 16;
     node_buf(node_buf == 0) = 1;%去零
     node_buf(node_buf > maxMagnitude - 1) = maxMagnitude - 1;%限幅
     node_buf(node_buf < -maxMagnitude) = -maxMagnitude;
